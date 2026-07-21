@@ -232,15 +232,15 @@ export default function Home() {
                 {inventory.length > 0 ? (
                   inventory.map((item) => (
                     <tr key={item.id}>
-                      <td>
+                      <td data-label="Image">
                         <div className="thumb-container">
                           <img src={item.image_path} alt={item.sku_id} className="thumb" />
                         </div>
                       </td>
-                      <td>{item.sku_id}</td>
-                      <td>{item.category}</td>
-                      <td>{item.sub_category}</td>
-                      <td>{new Date(item.created_at).toLocaleDateString()}</td>
+                      <td data-label="SKU ID">{item.sku_id}</td>
+                      <td data-label="Category">{item.category}</td>
+                      <td data-label="Sub Category">{item.sub_category}</td>
+                      <td data-label="Added On">{new Date(item.created_at).toLocaleDateString()}</td>
                     </tr>
                   ))
                 ) : (
