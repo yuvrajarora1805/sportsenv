@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    container_name: sports-inventory
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./inventory.json:/app/inventory.json
+      - ./public/uploads:/app/public/uploads
