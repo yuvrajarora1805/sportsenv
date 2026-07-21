@@ -187,7 +187,16 @@ export default function Home() {
             </div>
             <div className="form-group">
               <label>Product Image</label>
-              <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} required />
+              <div className="upload-buttons">
+                <label>
+                  📷 Take Photo
+                  <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden-file-input" />
+                </label>
+                <label>
+                  🖼️ Gallery
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="hidden-file-input" />
+                </label>
+              </div>
               {imagePreview && (
                 <div className="image-preview">
                   <img src={imagePreview} alt="Preview" />
