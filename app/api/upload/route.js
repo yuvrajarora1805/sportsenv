@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { addInventoryItem } from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function POST(request) {
   try {
@@ -32,14 +32,12 @@ export async function POST(request) {
     const image_path = `/uploads/${uniqueFilename}`;
 
     // Insert into database
-    const newItem = addInventoryItem({
-      sku_id,
-      category,
-      sub_category,
-      image_path
-    });
+    const result = await query(
+      'INSERT INTO inventory (sku_id, category, sub_category, image_path) VALUES (?, ?, ?, ?)',
+      [sku_id, category, sub_category, image_path]
+    );
 
-    return NextResponse.json({ success: true, id: newItem.id, image_path });
+    return NextResponse.json({ success: true, id: result.insertId, image_path });
   } catch (error) {
     console.error('Upload Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

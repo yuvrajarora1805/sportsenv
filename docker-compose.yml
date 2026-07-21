@@ -6,6 +6,22 @@ services:
     restart: unless-stopped
     ports:
       - "3005:3005"
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=sportsenv
+      - DB_NAME=sports_inventory
     volumes:
-      - ./inventory.json:/app/inventory.json
       - ./public/uploads:/app/public/uploads
+    depends_on:
+      - db
+      
+  db:
+    image: mariadb:10.11
+    container_name: sports-inventory-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=sportsenv
+      - MYSQL_DATABASE=sports_inventory
+    volumes:
+      - ./mysql_data:/var/lib/mysql

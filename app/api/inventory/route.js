@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getInventory } from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function GET() {
   try {
-    const items = getInventory();
-    
+    const items = await query('SELECT * FROM inventory ORDER BY created_at DESC');
     return NextResponse.json({ success: true, items });
   } catch (error) {
     console.error('Fetch Inventory Error:', error);

@@ -12,14 +12,8 @@ export default function Home() {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [inventory, setInventory] = useState([]);
+  const [categories, setCategories] = useState({});
   const [loading, setLoading] = useState(false);
-
-  const SPORTS_CATEGORIES = {
-    'Cricket': ['Bats', 'Balls', 'Pads', 'Helmets', 'Gloves'],
-    'Football': ['Balls', 'Boots', 'Shin Guards', 'Goalkeeper Gloves'],
-    'Tennis': ['Rackets', 'Balls', 'Shoes'],
-    'Basketball': ['Balls', 'Shoes', 'Hoops', 'Jerseys']
-  };
 
   const handleCategoryChange = (e) => {
     setCategory(e.target.value);
@@ -28,7 +22,66 @@ export default function Home() {
 
   useEffect(() => {
     fetchInventory();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories');
+      const data = await res.json();
+      if (data.success) {
+        setCategories(data.categories);
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    }
+  };
+
+  const handleAddCategory = async () => {
+    const newCategory = prompt("Enter new Category name:");
+    if (!newCategory || !newCategory.trim()) return;
+    
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: newCategory.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCategories(data.categories);
+        setCategory(newCategory.trim());
+        setSubCategory('');
+      }
+    } catch (err) {
+      alert("Failed to add category");
+    }
+  };
+
+  const handleAddSubCategory = async () => {
+    if (!category) {
+      alert("Please select a category first.");
+      return;
+    }
+    const newSubCategory = prompt(`Enter new Sub Category for ${category}:`);
+    if (!newSubCategory || !newSubCategory.trim()) return;
+    
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, subCategory: newSubCategory.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCategories(data.categories);
+        setSubCategory(newSubCategory.trim());
+      }
+    } catch (err) {
+      alert("Failed to add sub category");
+    }
+  };
+
 
   const fetchInventory = async () => {
     try {
@@ -169,21 +222,27 @@ export default function Home() {
             </div>
             <div className="form-group">
               <label>Category</label>
-              <select value={category} onChange={handleCategoryChange} required>
-                <option value="" disabled>Select Category</option>
-                {Object.keys(SPORTS_CATEGORIES).map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <select value={category} onChange={handleCategoryChange} required style={{ flex: 1 }}>
+                  <option value="" disabled>Select Category</option>
+                  {Object.keys(categories).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <button type="button" onClick={handleAddCategory} className="btn-secondary" style={{ padding: '0 15px' }}>+</button>
+              </div>
             </div>
             <div className="form-group">
               <label>Sub Category</label>
-              <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)} required disabled={!category}>
-                <option value="" disabled>Select Sub Category</option>
-                {category && SPORTS_CATEGORIES[category].map(sub => (
-                  <option key={sub} value={sub}>{sub}</option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)} required disabled={!category} style={{ flex: 1 }}>
+                  <option value="" disabled>Select Sub Category</option>
+                  {category && categories[category] && categories[category].map(sub => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+                <button type="button" onClick={handleAddSubCategory} disabled={!category} className="btn-secondary" style={{ padding: '0 15px' }}>+</button>
+              </div>
             </div>
             <div className="form-group">
               <label>Product Image</label>

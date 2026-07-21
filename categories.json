@@ -1,0 +1,6 @@
+{
+  "Cricket": ["Bats", "Balls", "Pads", "Helmets", "Gloves"],
+  "Football": ["Balls", "Boots", "Shin Guards", "Goalkeeper Gloves"],
+  "Tennis": ["Rackets", "Balls", "Shoes"],
+  "Basketball": ["Balls", "Shoes", "Hoops", "Jerseys"]
+}
