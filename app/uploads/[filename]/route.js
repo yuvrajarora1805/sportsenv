@@ -3,7 +3,7 @@ import path from 'path';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
-  const filename = params.filename;
+  const { filename } = await params;
   
   // Construct the absolute path to the file
   const filePath = path.join(process.cwd(), 'public', 'uploads', filename);
