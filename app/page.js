@@ -14,6 +14,8 @@ export default function Home() {
   const [inventory, setInventory] = useState([]);
   const [categories, setCategories] = useState({});
   const [loading, setLoading] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleCategoryChange = (e) => {
     setCategory(e.target.value);
@@ -105,7 +107,7 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!skuId || !category || !subCategory || !image) {
+    if (!skuId || !category || !subCategory) {
       alert('Please fill all fields');
       return;
     }
@@ -115,31 +117,102 @@ export default function Home() {
     formData.append('sku_id', skuId);
     formData.append('category', category);
     formData.append('sub_category', subCategory);
-    formData.append('image', image);
+    if (image) {
+      formData.append('image', image);
+    }
 
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      let res;
+      if (editId) {
+        res = await fetch(`/api/inventory/${editId}`, {
+          method: 'PUT',
+          body: formData,
+        });
+      } else {
+        if (!image) {
+          alert('Please provide an image when adding a new item');
+          setLoading(false);
+          return;
+        }
+        res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+      }
+      
       const data = await res.json();
       
       if (data.success) {
-        alert('Item added successfully!');
-        setSkuId('');
-        setCategory('');
-        setSubCategory('');
-        setImage(null);
-        setImagePreview('');
+        alert(editId ? 'Item updated successfully!' : 'Item added successfully!');
+        resetForm();
         fetchInventory(); // Refresh list
       } else {
-        alert(data.error || 'Upload failed');
+        alert(data.error || 'Operation failed');
       }
     } catch (err) {
       console.error(err);
-      alert('An error occurred during upload');
+      alert('An error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSkuId('');
+    setCategory('');
+    setSubCategory('');
+    setImage(null);
+    setImagePreview('');
+    setEditId(null);
+  };
+
+  const handleEdit = (item) => {
+    setEditId(item.id);
+    setSkuId(item.sku_id);
+    setCategory(item.category);
+    setSubCategory(item.sub_category);
+    setImagePreview(item.image_path);
+    setImage(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this item?')) return;
+    
+    try {
+      const res = await fetch(`/api/inventory/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchInventory();
+      } else {
+        alert(data.error || 'Failed to delete');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting item');
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      setImage(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -214,7 +287,7 @@ export default function Home() {
 
       <div className="layout">
         <section className="upload-section card">
-          <h2>Add New Item</h2>
+          <h2>{editId ? 'Edit Item' : 'Add New Item'}</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>SKU ID</label>
@@ -246,15 +319,30 @@ export default function Home() {
             </div>
             <div className="form-group">
               <label>Product Image</label>
-              <div className="upload-buttons">
-                <label>
-                  📷 Take Photo
-                  <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden-file-input" />
-                </label>
-                <label>
-                  🖼️ Gallery
-                  <input type="file" accept="image/*" onChange={handleImageChange} className="hidden-file-input" />
-                </label>
+              <div 
+                className={`upload-buttons drag-zone ${isDragging ? 'dragging' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                style={{ 
+                  border: isDragging ? '2px dashed #007bff' : '2px dashed #ccc', 
+                  padding: '20px', 
+                  textAlign: 'center',
+                  borderRadius: '8px',
+                  marginBottom: '10px'
+                }}
+              >
+                <p style={{ margin: '0 0 10px 0', color: '#666' }}>Drag and drop an image here, or</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                  <label>
+                    📷 Take Photo
+                    <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden-file-input" />
+                  </label>
+                  <label>
+                    🖼️ Gallery
+                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden-file-input" />
+                  </label>
+                </div>
               </div>
               {imagePreview && (
                 <div className="image-preview">
@@ -262,9 +350,16 @@ export default function Home() {
                 </div>
               )}
             </div>
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? 'Uploading...' : 'Add Item'}
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" disabled={loading} className="btn-primary" style={{ flex: 1 }}>
+                {loading ? 'Saving...' : (editId ? 'Update Item' : 'Add Item')}
+              </button>
+              {editId && (
+                <button type="button" onClick={resetForm} className="btn-secondary" style={{ flex: 1 }}>
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </section>
 
@@ -285,6 +380,7 @@ export default function Home() {
                   <th>Category</th>
                   <th>Sub Category</th>
                   <th>Added On</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -300,11 +396,15 @@ export default function Home() {
                       <td data-label="Category">{item.category}</td>
                       <td data-label="Sub Category">{item.sub_category}</td>
                       <td data-label="Added On">{new Date(item.created_at).toLocaleDateString()}</td>
+                      <td data-label="Actions">
+                        <button onClick={() => handleEdit(item)} className="btn-secondary" style={{ marginRight: '5px', padding: '5px 10px', fontSize: '0.8rem' }}>Edit</button>
+                        <button onClick={() => handleDelete(item.id)} className="btn-primary" style={{ backgroundColor: '#dc3545', padding: '5px 10px', fontSize: '0.8rem' }}>Delete</button>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="empty-state">No items found. Add one above!</td>
+                    <td colSpan="6" className="empty-state">No items found. Add one above!</td>
                   </tr>
                 )}
               </tbody>
