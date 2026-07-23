@@ -278,6 +278,82 @@ export default function Home() {
     saveAs(new Blob([buffer]), 'sports_inventory.xlsx');
   };
 
+  const renderForm = (isEdit = false) => (
+    <form onSubmit={handleSubmit}>
+      <div className="form-group">
+        <label>SKU ID</label>
+        <input type="text" value={skuId} onChange={(e) => setSkuId(e.target.value)} placeholder="e.g. BAT-001" />
+      </div>
+      <div className="form-group">
+        <label>Category</label>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <select value={category} onChange={handleCategoryChange} required style={{ flex: 1 }}>
+            <option value="" disabled>Select Category</option>
+            {Object.keys(categories).map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          <button type="button" onClick={handleAddCategory} className="btn-secondary" style={{ padding: '0 15px' }}>+</button>
+        </div>
+      </div>
+      <div className="form-group">
+        <label>Sub Category</label>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)} required disabled={!category} style={{ flex: 1 }}>
+            <option value="" disabled>Select Sub Category</option>
+            {category && categories[category] && categories[category].map(sub => (
+              <option key={sub} value={sub}>{sub}</option>
+            ))}
+          </select>
+          <button type="button" onClick={handleAddSubCategory} disabled={!category} className="btn-secondary" style={{ padding: '0 15px' }}>+</button>
+        </div>
+      </div>
+      <div className="form-group">
+        <label>Product Image</label>
+        <div 
+          className={`upload-buttons drag-zone ${isDragging ? 'dragging' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{ 
+            border: isDragging ? '2px dashed #007bff' : '2px dashed #ccc', 
+            padding: '20px', 
+            textAlign: 'center',
+            borderRadius: '8px',
+            marginBottom: '10px'
+          }}
+        >
+          <p style={{ margin: '0 0 10px 0', color: '#666' }}>Drag and drop an image here, or</p>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <label>
+              📷 Take Photo
+              <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden-file-input" />
+            </label>
+            <label>
+              🖼️ Gallery
+              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden-file-input" />
+            </label>
+          </div>
+        </div>
+        {imagePreview && (
+          <div className="image-preview">
+            <img src={imagePreview} alt="Preview" />
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button type="submit" disabled={loading} className="btn-primary" style={{ flex: 1 }}>
+          {loading ? 'Saving...' : (isEdit ? 'Update Item' : 'Add Item')}
+        </button>
+        {isEdit && (
+          <button type="button" onClick={resetForm} className="btn-secondary" style={{ flex: 1 }}>
+            Cancel
+          </button>
+        )}
+      </div>
+    </form>
+  );
+
   return (
     <main className="container">
       <header className="header">
@@ -287,81 +363,30 @@ export default function Home() {
 
       <div className="layout">
         <section className="upload-section card">
-          <h2>{editId ? 'Edit Item' : 'Add New Item'}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>SKU ID</label>
-              <input type="text" value={skuId} onChange={(e) => setSkuId(e.target.value)} placeholder="e.g. BAT-001" />
-            </div>
-            <div className="form-group">
-              <label>Category</label>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <select value={category} onChange={handleCategoryChange} required style={{ flex: 1 }}>
-                  <option value="" disabled>Select Category</option>
-                  {Object.keys(categories).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <button type="button" onClick={handleAddCategory} className="btn-secondary" style={{ padding: '0 15px' }}>+</button>
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Sub Category</label>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)} required disabled={!category} style={{ flex: 1 }}>
-                  <option value="" disabled>Select Sub Category</option>
-                  {category && categories[category] && categories[category].map(sub => (
-                    <option key={sub} value={sub}>{sub}</option>
-                  ))}
-                </select>
-                <button type="button" onClick={handleAddSubCategory} disabled={!category} className="btn-secondary" style={{ padding: '0 15px' }}>+</button>
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Product Image</label>
-              <div 
-                className={`upload-buttons drag-zone ${isDragging ? 'dragging' : ''}`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                style={{ 
-                  border: isDragging ? '2px dashed #007bff' : '2px dashed #ccc', 
-                  padding: '20px', 
-                  textAlign: 'center',
-                  borderRadius: '8px',
-                  marginBottom: '10px'
-                }}
-              >
-                <p style={{ margin: '0 0 10px 0', color: '#666' }}>Drag and drop an image here, or</p>
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                  <label>
-                    📷 Take Photo
-                    <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden-file-input" />
-                  </label>
-                  <label>
-                    🖼️ Gallery
-                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden-file-input" />
-                  </label>
-                </div>
-              </div>
-              {imagePreview && (
-                <div className="image-preview">
-                  <img src={imagePreview} alt="Preview" />
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="submit" disabled={loading} className="btn-primary" style={{ flex: 1 }}>
-                {loading ? 'Saving...' : (editId ? 'Update Item' : 'Add Item')}
-              </button>
-              {editId && (
-                <button type="button" onClick={resetForm} className="btn-secondary" style={{ flex: 1 }}>
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
+          <h2>Add New Item</h2>
+          {!editId && renderForm(false)}
         </section>
+
+        {/* Edit Modal */}
+        {editId && (
+          <div className="modal-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', 
+            alignItems: 'center', justifyContent: 'center', zIndex: 1000
+          }}>
+            <div className="modal-content card" style={{
+              backgroundColor: 'white', padding: '30px', borderRadius: '12px', 
+              width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ margin: 0 }}>Edit Item</h2>
+                <button onClick={resetForm} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#666' }}>&times;</button>
+              </div>
+              {renderForm(true)}
+            </div>
+          </div>
+        )}
 
         <section className="inventory-section card">
           <div className="inventory-header">
